@@ -12,18 +12,33 @@ app.get('/users', (req, res) => {
 
 app.post('/users', async (req, res) => {
   try {
-    //genSalt() for generating salt to make password more secure
-    const salt = await bcrypt.genSalt()
-
-    //use this to hash password and then pass in the salt that has been generated
-    const hashedPassword = await bcrypt.hash(req.body.password, salt)
-    console.log(salt)
+    // another way to hash and salt without using the genSalt() method is to do it in the hash method
+    const hashedPassword = await bcrypt.hash(req.body.password, 10) //by passing ten we are auto telling hash to add a salt of 10 rounds which is btw the default
     console.log(hashedPassword)
-    const user = { name: req.body.username, password: hashedPassword }
+    const user = { name: req.body.name, password: hashedPassword }
     users.push(user)
     res.status(201).send()
   } catch (error) {
     res.status(500).send()
   }
 })
+
+app.post('/users/login', async (req, res) => {
+  const user = users.find((user) => user.name === req.body.name)
+
+  if (!user) {
+    return res.status(404).send('user not found')
+  }
+
+  try {
+    if (await bcrypt.compare(req.body.password, user.password)) {
+      return res.send('Success')
+    } else {
+      return res.send('not allowed')
+    }
+  } catch {
+    return res.status(500)
+  }
+})
+
 app.listen(3000, () => console.log('listening at 3000'))
